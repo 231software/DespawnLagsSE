@@ -1,30 +1,35 @@
-PLUGIN_NAME="DespawnLags"
+// LiteLoader-AIDS automatic generated
+/// <reference path="c:\Users\Administrator\.vscode/dts/helperlib/src/index.d.ts"/>
 
-log("DespawnLagsSE开始运行")
+PLUGIN_NAME = "DespawnLags";
 
-conf=new JsonConfigFile("plugins/"+PLUGIN_NAME+"/config.json")
+let Getland = ll.imports("ILAPI_PosGetLand");
 
-conf.init("Config",{
-    DespawnTicks: 600,
-    Whitelist: [
-        "minecraft:netherite_helmet",
-        "minecraft:netherite_sword",
-        "minecraft:netherite_chestplate",
-        "minecraft:netherite_leggings",
-        "minecraft:undyed_shulker_box",
-        "minecraft:netherite_boots",
-        "minecraft:shulker_box",
-        "minecraft:elytra",
-        "minecraft:dragon_egg",
-        "minecraft:nether_star"
-    ]
-})
+log("DespawnLagsSE开始运行");
 
-function getDespawnTime(){
-    return conf.get("Config").DespawnTicks*50
+conf = new JsonConfigFile("plugins/" + PLUGIN_NAME + "/config.json");
+
+conf.init("Config", {
+  DespawnTicks: 600,
+  Whitelist: [
+    "minecraft:netherite_helmet",
+    "minecraft:netherite_sword",
+    "minecraft:netherite_chestplate",
+    "minecraft:netherite_leggings",
+    "minecraft:undyed_shulker_box",
+    "minecraft:netherite_boots",
+    "minecraft:shulker_box",
+    "minecraft:elytra",
+    "minecraft:dragon_egg",
+    "minecraft:nether_star",
+  ],
+});
+
+function getDespawnTime() {
+  return conf.get("Config").DespawnTicks * 50;
 }
 
-const IntervalBase=1000
+const IntervalBase = 1000;
 
 /*
 算法：每隔一段时间就检测一次服务器中所有的掉落物
@@ -35,57 +40,63 @@ const IntervalBase=1000
 */
 
 /**原定用于保存实时实体列表，应该是没用了 */
-let items=[]
+let items = [];
 /**服务器中实体第一次出现的时间 */
-let exist={}
+let exist = {};
 
-function onServerStarted(){
+function onServerStarted() {}
+mc.listen("onServerStarted", onServerStarted);
 
-}
-mc.listen("onServerStarted",onServerStarted)
-
-function refreshItems(){
-    //let start=new Date().getTime()
-    //log("refresh")
-    //为了刷新物品列表，需要将其重置，才能重新向其中添加
-    items=[]
-    mc.getAllEntities().forEach((entity)=>{
-        /**遍历发生时的时间 */
-        //let currentTime=new Date().getTime();
-        if(entity.isItemEntity()){
-            //如果当前物品实体找不到uuid就直接中断(已弃用)
-            //if(!entity.uniqueId==null)return;
-            //如果当前物品在白名单中就直接中断
-            if(conf.get("Config").Whitelist.includes(entity.toItem().type))return;
-            //先检查exist中是否应该清除，再将当前物品的列表加入items（刷新items）
-            if(exist[entity.uniqueId]!=undefined){
-                //在已保存的物品实体列表中发现了当前遍历到的这个实体
-                if(exist[entity.uniqueId]>=getDespawnTime()/IntervalBase){
-                    //实体中保存的留存检测次数达到了实体最大留存检测次数（留存时间/循环间隔），证明这个实体应该被清除
-                    //将实体清除
-                    entity.despawn()
-                    //将实体的相关记录清除
-                    //将实体在exist中的记录清除
-                    delete exist[entity.uniqueId]
-                }
-                else{
-                    //没有超过，那么此次检测就将原记录+1
-                    exist[entity.uniqueId]++
-                }
-            }
-            else{
-                //没有找到这个实体，说明这个实体是第一次出现在插件中，那就把它初始化
-                //将新发现的uuid保存
-                exist[entity.uniqueId]=1;
-            }
-            //刷新items
-            //items.push(entity);            
-            //log(typeof(item.getNbt().getData("UniqueID")))
-
+function refreshItems() {
+  //let start=new Date().getTime()
+  //log("refresh")
+  //为了刷新物品列表，需要将其重置，才能重新向其中添加
+  items = [];
+  mc.getAllEntities().forEach((entity) => {
+    /**遍历发生时的时间 */
+    //let currentTime=new Date().getTime();
+    if (entity.isItemEntity()) {
+      if (!LandEntity(entity)) {
+        //如果当前物品实体找不到uuid就直接中断(已弃用)
+        //if(!entity.uniqueId==null)return;
+        //如果当前物品在白名单中就直接中断
+        if (conf.get("Config").Whitelist.includes(entity.toItem().type)) return;
+        //先检查exist中是否应该清除，再将当前物品的列表加入items（刷新items）
+        if (exist[entity.uniqueId] != undefined) {
+          //在已保存的物品实体列表中发现了当前遍历到的这个实体
+          if (exist[entity.uniqueId] >= getDespawnTime() / IntervalBase) {
+            //实体中保存的留存检测次数达到了实体最大留存检测次数（留存时间/循环间隔），证明这个实体应该被清除
+            //将实体清除
+            entity.despawn();
+            //将实体的相关记录清除
+            //将实体在exist中的记录清除
+            delete exist[entity.uniqueId];
+          } else {
+            //没有超过，那么此次检测就将原记录+1
+            exist[entity.uniqueId]++;
+          }
+        } else {
+          //没有找到这个实体，说明这个实体是第一次出现在插件中，那就把它初始化
+          //将新发现的uuid保存
+          exist[entity.uniqueId] = 1;
         }
-    })
-    //let stop=new Date().getTime()
-    //log("耗时"+(stop-start).toString())
+        //刷新items
+        //items.push(entity);
+        //log(typeof(item.getNbt().getData("UniqueID")))
+      } else {
+        if (conf.get("Config").Whitelist.includes(entity.toItem().type)) return;
+        setTimeout(() => {
+          //将实体清除
+          entity.despawn();
+          //将实体的相关记录清除
+          //将实体在exist中的记录清除
+          delete exist[entity.uniqueId];
+        }, 10000);
+      }
+    }
+  });
+  //let stop=new Date().getTime()
+  //log("耗时"+(stop-start).toString())
 }
 
 /*
@@ -100,8 +111,8 @@ function checkItems(){
 */
 
 /**创建检测循环 */
-function refreshLoop(){
-    return setInterval(refreshItems,IntervalBase)
+function refreshLoop() {
+  return setInterval(refreshItems, IntervalBase);
 }
 
 /**
@@ -109,19 +120,28 @@ function refreshLoop(){
  * @param {LLSE_Entity} entity 要获取UUID的实体
  * @returns {number} 实体的UUID
  */
-function getEntityUUID(entity){
-    if(!entity.getNbt().getKeys().includes("UniqueID"))return null;
-    return entity.getNbt().getData("UniqueID")
+function getEntityUUID(entity) {
+  if (!entity.getNbt().getKeys().includes("UniqueID")) return null;
+  return entity.getNbt().getData("UniqueID");
 }
 
-let mainloop=refreshLoop()
+let mainloop = refreshLoop();
 
 //每半小时清除一次exist防止缓存过大造成安全隐患
-let clearCacheInterval=setInterval(()=>{
-    exist={}
-},1800000)
+let clearCacheInterval = setInterval(() => {
+  exist = {};
+}, 1800000);
 
-
+/**
+ * 判断改实体是否在领地中
+ * @param {Entity} Entity
+ * @returns {boolean}
+ */
+function LandEntity(Entity) {
+  if (Getland(Entity.pos) == -1) {
+    return false;
+  } else return true;
+}
 
 /*
 def test():
@@ -146,5 +166,12 @@ for item in items:
         break
 */
 
-
-ll.registerPlugin("DespawnLags","DespawnLags的脚本引擎版",[0,0,1,Version.Dev],{Author:"Tsubasa6848,NewMoonMinecraftStudio",GitHub:"https://www.github.com/231software/DespawnLagsSE"})
+ll.registerPlugin(
+  "DespawnLags",
+  "DespawnLags的脚本引擎版",
+  [0, 0, 1, Version.Dev],
+  {
+    Author: "Tsubasa6848,NewMoonMinecraftStudio",
+    GitHub: "https://www.github.com/231software/DespawnLagsSE",
+  }
+);
